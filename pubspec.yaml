@@ -1,6 +1,6 @@
 name: dragon_logs
-description: A cross-platform lightweight log storage for Flutter
-version: 0.0.1-preview.1
+description: An efficient cross-platform Flutter log storage framework with minimal dependencies.
+version: 0.0.1-preview.1+1
 
 repository: https://github.com/KomodoPlatform/dragon_logs_flutter
 homepage: https://komodoplatform.com
@@ -29,7 +29,7 @@ dependencies:
   #     path: hive/
   #     ref: 470473ffc1ba39f6c90f31ababe0ee63b76b69fe #2.2.3
 
-  # Approved via K-W PR  
+  # Approved via K-W PR  #1106
   share_plus: ^7.0.2 # TODO: request review of latest version
     
   # ====== Pending Secure code review ======
