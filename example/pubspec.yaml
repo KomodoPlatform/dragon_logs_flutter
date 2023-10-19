@@ -1,5 +1,5 @@
-name: example
-description: A new Flutter project.
+name: dragon_logs_example
+description: An example app for dragon_logs package
 publish_to: 'none'
 version: 0.1.0
 
@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  dragon_logs:
+    path: ../
 
 dev_dependencies:
   flutter_test:
