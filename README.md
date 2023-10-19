@@ -2,7 +2,8 @@
 
 A lightweight, high-throughput cross-platform logging framework for Flutter with persisted log storage.
 
-![Komodo Platform Logo](https://komodoplatform.com/assets/img/logo-dark.webp)
+[![Komodo Platform Logo](https://komodoplatform.com/assets/img/logo-dark.webp)](https://github.com/KomodoPlatform)
+
 
 ## Overview
 
