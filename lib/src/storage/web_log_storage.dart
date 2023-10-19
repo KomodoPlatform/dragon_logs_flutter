@@ -30,6 +30,12 @@ class WebLogStorage with QueueMixin implements LogStorage {
 
   @override
   Future<void> init() async {
+    if (!FileSystemAccess.supported) {
+      throw Exception(
+        "FileSystemAccess not supported for log storage on this browser",
+      );
+    }
+
     final now = DateTime.now();
     _currentLogFileName = logDayFileName(now);
 
@@ -66,8 +72,8 @@ class WebLogStorage with QueueMixin implements LogStorage {
 
   @override
   // TODO: implement so that we don't have to delete the whole file
-  Future<void> deleteOldLogs(int sizeMb) async {
-    while (await getLogFolderSize() > sizeMb * 1024 * 1024) {
+  Future<void> deleteOldLogs(int size) async {
+    while (await getLogFolderSize() > size) {
       final files = await _getLogFiles();
 
       final sortedFiles = files.toList()
@@ -139,8 +145,7 @@ class WebLogStorage with QueueMixin implements LogStorage {
 
   @override
   Future<void> appendLog(DateTime date, String text) async {
-    String logEntry = '${date.toIso8601String()}: $text\n';
-    enqueue(logEntry);
+    enqueue(text);
   }
 
   //TODO! Move to web worker for web so we can access sync flush method instead

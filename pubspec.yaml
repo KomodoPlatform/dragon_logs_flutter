@@ -1,13 +1,13 @@
 name: dragon_logs
 description: An efficient cross-platform Flutter log storage framework with minimal dependencies.
-version: 0.0.1-preview.1+1
+version: 0.1.1-preview.1+1
 
 repository: https://github.com/KomodoPlatform/dragon_logs_flutter
 homepage: https://komodoplatform.com
 
 
 environment:
-  sdk: '>=2.12.0 <4.0.0'
+  sdk: '>=2.14.0 <4.0.0'
 
 dev_dependencies:
   lints: ^1.0.0
@@ -41,6 +41,6 @@ dependencies:
   # they are Google/Dart products, but still recommended.
   
   intl: ^0.18.1
-  path_provider: ^2.0.15
+  path_provider: ^2.1.1
   path: ^1.8.3
   js: ^0.6.7

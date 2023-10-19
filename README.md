@@ -31,7 +31,7 @@ To use Dragon Logs, add it as a dependency in your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  dragon_logs: ^0.0.1-preview.1+1
+  dragon_logs: ^0.1.1-preview.1
 ```
 
 Then, run:
@@ -105,13 +105,19 @@ The stream events do not guarantee a uniform payload. Some events may contain a 
 
 Usage:
 ```dart
-final logsStream = DragonLogs.exportLogsStream();
+  final logsStream = DragonLogs.exportLogsStream();
 
-final buffer = StringBuffer();
+  File file = File('${getApplicationCacheDirectory}}/output.txt');
 
-for (final log in await logsStream.toList()) {
-  buffer.write(log);
-}
+  file = await file.exists() ? file : await file.create(recursive: true);
+
+  final logFileSink = file.openWrite(mode: FileMode.append);
+
+  for (final log in await logsStream) {
+    logFileSink.writeln(log);
+  }
+
+  await logFileSink.close();
 ```
 
 #### `exportLogsString() -> Future<String>`

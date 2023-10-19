@@ -31,13 +31,7 @@ class FileLogStorage with QueueMixin implements LogStorage {
     _logFolderPath = await getLogFolderPath();
     _isInitialized = true;
 
-    // Start a task to flush the log queue periodically
-    // scheduleMicrotask(() async {
-    while (true) {
-      await Future.delayed(const Duration(seconds: 10));
-      await flushQueue();
-    }
-    // });
+    initQueueFlusher();
   }
 
   @override
@@ -83,8 +77,8 @@ class FileLogStorage with QueueMixin implements LogStorage {
   }
 
   @override
-  Future<void> deleteOldLogs(int sizeMb) async {
-    while (await getLogFolderSize() > sizeMb * 1024 * 1024) {
+  Future<void> deleteOldLogs(int size) async {
+    while (await getLogFolderSize() > size) {
       final files = await getLogFiles();
       final sortedFiles = files.entries.toList()
         ..sort((a, b) => a.key.compareTo(b.key));
@@ -145,12 +139,12 @@ class FileLogStorage with QueueMixin implements LogStorage {
   }
 
   Future<File> getLogFile(DateTime date) async {
-    final path = getLogFilePath(date);
-    return File(path);
+    final path = getLogFileName(date);
+    return File('$logFolderPath/$path');
   }
 
   // TODO? Move to shared code to get file name?
-  String getLogFilePath(DateTime date) {
+  String getLogFileName(DateTime date) {
     return '${date.year}-${date.month}-${date.day}.log';
   }
 
@@ -208,7 +202,7 @@ class FileLogStorage with QueueMixin implements LogStorage {
 
     final formatter = DateFormat('yyyyMMdd_HHmmss');
     final filename = 'log_${formatter.format(DateTime.now())}.txt';
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await getApplicationCacheDirectory();
     final downloadFolder = '${dir.path}/dragon_logs_export/';
     final folder = Directory(downloadFolder);
 

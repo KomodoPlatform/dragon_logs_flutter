@@ -1,7 +1,7 @@
 import 'dart:async';
 
 mixin QueueMixin {
-  final _logQueue = <String>[];
+  List<String> _logQueue = [];
   Completer<void>? _flushCompleter;
   bool _isQueueEnabled = false;
 
@@ -10,12 +10,13 @@ mixin QueueMixin {
 
     _isQueueEnabled = true;
 
-    scheduleMicrotask(() async {
-      while (_isQueueEnabled) {
-        await Future.delayed(const Duration(seconds: 5));
-        await flushQueue();
-      }
-    });
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 5));
+      await flushQueue().catchError((e) {
+        print('Error flushing log queue: $e');
+      });
+      return _isQueueEnabled;
+    }).ignore();
   }
 
   bool get isFlushing => _flushCompleter != null;
@@ -43,12 +44,26 @@ mixin QueueMixin {
     if (_logQueue.isEmpty) return;
 
     startFlush();
-    final logs = StringBuffer();
 
-    logs.writeAll(_logQueue, '\n');
+    // This way of re-assigning the queue instead of mutating it helps reduce
+    // memory use and CPU to copy the object. It should be safe from race
+    // conditions, but if issues arrise, pay attention to these lines.
+    final List<String> toWrite = _logQueue;
 
-    await writeToTextFile('\n' + logs.toString() + '\n');
-    endFlush();
+    _logQueue = [];
+
+    try {
+      final logConcat = StringBuffer();
+
+      logConcat.writeAll(toWrite, '\n');
+
+      await writeToTextFile(toWrite.toString());
+    } catch (e) {
+      _logQueue.add('FAILED TO WRITE LOGS: $e');
+      _logQueue.insertAll(0, toWrite);
+    } finally {
+      endFlush();
+    }
   }
 
   /// Writes a String to the log text file for today.

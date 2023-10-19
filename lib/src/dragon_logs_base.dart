@@ -8,7 +8,7 @@ class DragonLogs {
   static final _instance = DragonLogs._();
 
   // 100 MB
-  static final int _maxLogStorageSize = 100 * 1024 * 1024;
+  static final int _maxLogStorageSize = 100 * 1024 * 1024; // 100 MB
 
   Map<String, dynamic>? _metadata = {};
 

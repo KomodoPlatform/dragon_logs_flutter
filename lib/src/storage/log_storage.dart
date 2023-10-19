@@ -17,8 +17,8 @@ abstract class LogStorage {
   Future<int> getLogFolderSize();
 
   /// Deletes oldest logs until the total size of the log folder is less than
-  /// or equal to [sizeMb].
-  Future<void> deleteOldLogs(int sizeMb);
+  /// or equal to [size] in bytes.
+  Future<void> deleteOldLogs(int size);
 
   factory LogStorage() => getLogStorageInstance();
 }
