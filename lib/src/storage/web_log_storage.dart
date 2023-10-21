@@ -15,10 +15,10 @@ import 'package:js/js_util.dart' as js;
 external dynamic get navigator;
 
 class WebLogStorage with QueueMixin implements LogStorage {
+  // TODO: Multi-day support
   // final List<FileSystemFileHandle> _logHandles = [];
   FileSystemDirectoryHandle? _logDirectory;
 
-  // TODO: Multi-day support
   FileSystemFileHandle? _currentLogFile;
   FileSystemWritableFileStream? _currentLogStream;
   String _currentLogFileName = "";
@@ -65,7 +65,6 @@ class WebLogStorage with QueueMixin implements LogStorage {
       await closeLogFile();
       await initWriteDate(DateTime.now());
     } catch (e) {
-      enqueue(logs);
       rethrow;
     }
   }
@@ -156,8 +155,6 @@ class WebLogStorage with QueueMixin implements LogStorage {
       // await _currentLogStream?.flush();
       await _currentLogStream!.close();
 
-      await _currentLogStream!.abort();
-
       _currentLogStream = null;
     }
   }
@@ -177,7 +174,6 @@ class WebLogStorage with QueueMixin implements LogStorage {
             .where((handle) => handle.kind == FileSystemKind.file)
             .cast<FileSystemFileHandle>()
             .where((handle) => !handle.name.endsWith('.crswap'))
-            // .asyncMap((handle) => handle.getFile())
             .toList() ??
         [];
 

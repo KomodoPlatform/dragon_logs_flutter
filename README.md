@@ -32,7 +32,7 @@ To use Dragon Logs, add it as a dependency in your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  dragon_logs: ^0.1.1-preview.1
+  dragon_logs: ^1.0.0
 ```
 
 Then, run:

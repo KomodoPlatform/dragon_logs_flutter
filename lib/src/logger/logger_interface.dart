@@ -1,5 +1,3 @@
-import 'package:intl/intl.dart';
-
 abstract class LoggerInterface {
   void log(String key, String message, {Map<String, dynamic>? metadata});
 
@@ -21,7 +19,15 @@ abstract class LoggerInterface {
         : '__metadata: ${metadata.toString()}';
     final appRunDurationString =
         appRunDuration == null ? null : 'T+:$appRunDuration';
-    final dateString = DateFormat('HH:mm:ss.SSS').format(date);
+    final dateString = _formatDate(date);
+
     return '$dateString$appRunDurationString [$key] $message$formattedMetadata';
+  }
+
+  String _formatDate(DateTime date) {
+    final utc = date.toUtc();
+
+    return '${utc.year}-${utc.month}-${utc.day}: '
+        '${utc.hour}:${utc.minute}:${utc.second}.${utc.millisecond}';
   }
 }

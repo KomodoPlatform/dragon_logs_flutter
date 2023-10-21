@@ -65,7 +65,7 @@ class _LogDemoPageState extends State<LogDemoPage> {
                   setState(() => isLoading = true);
 
                   for (var i = 0; i < itemCount; i++) {
-                    log('${('${i}0')} This is a log');
+                    log('${('$i')} This is a log');
                   }
 
                   ScaffoldMessenger.of(context)

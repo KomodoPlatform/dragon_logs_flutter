@@ -57,7 +57,9 @@ mixin QueueMixin {
 
       logConcat.writeAll(toWrite, '\n');
 
-      await writeToTextFile(toWrite.toString());
+      final bufferWritten = logConcat.toString();
+
+      await writeToTextFile(bufferWritten);
     } catch (e) {
       _logQueue.add('FAILED TO WRITE LOGS: $e');
       _logQueue.insertAll(0, toWrite);

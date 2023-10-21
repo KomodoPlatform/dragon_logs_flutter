@@ -214,7 +214,7 @@ class FileLogStorage with QueueMixin implements LogStorage {
     final logFile = File(logFilePath);
     final raf = logFile.openSync(mode: FileMode.writeOnly);
 
-    for (final data in await stream.toList()) {
+    await for (final data in stream) {
       raf.writeStringSync(data);
     }
 
