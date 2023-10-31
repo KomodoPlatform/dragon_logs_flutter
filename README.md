@@ -1,5 +1,9 @@
 # Dragon Logs
 
+<p align="center">
+<a href="https://pub.dev/packages/dragon_logs"><img src="https://img.shields.io/pub/v/dragon_logs.svg" alt="Pub"></a>
+</p>
+
 A lightweight, high-throughput cross-platform logging framework for Flutter with persisted log storage.
 
 [![Komodo Platform Logo](https://komodoplatform.com/assets/img/logo-dark.webp)](https://github.com/KomodoPlatform)
