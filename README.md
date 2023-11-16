@@ -36,7 +36,7 @@ To use Dragon Logs, add it as a dependency in your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  dragon_logs: ^1.0.0
+  dragon_logs: ^1.0.1
 ```
 
 Then, run:
@@ -52,7 +52,6 @@ Dragon Logs is a lightweight, high-throughput logging framework designed for Flu
 ## API Overview
 
 ### Initialization
-
 #### `init()`
 Initialize the logger. This method prepares the logger for use and ensures any old logs beyond the set maximum storage size are deleted.
 

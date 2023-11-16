@@ -1,3 +1,11 @@
+## 1.0.1
+
+- Refactor to share more code with web and native platforms.
+- Fix date parsing bug.
+- Add public API to clear all logs.
+
+Refactor to share more code between web and native platforms (focused mainly on file name and directory handling) and fix a bug where logs belonging to days with a single digit month or day could not be parsed.
+
 ## 1.0.0
 
 - Stable release
