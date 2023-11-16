@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 // import 'package:archive/archive.dart';
+import 'package:dragon_logs/src/storage/input_output_mixin.dart';
 import 'package:dragon_logs/src/storage/log_storage.dart';
 import 'package:dragon_logs/src/storage/queue_mixin.dart';
 import 'package:flutter/foundation.dart';
@@ -12,7 +13,9 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-class FileLogStorage with QueueMixin implements LogStorage {
+class FileLogStorage
+    with QueueMixin, CommonLogStorageOperations
+    implements LogStorage {
   FileLogStorage._internal();
 
   static final FileLogStorage _instance = FileLogStorage._internal();
@@ -56,7 +59,7 @@ class FileLogStorage with QueueMixin implements LogStorage {
   }
 
   Future<void> _writeTextToFile(DateTime logFileDay, String text) async {
-    final file = await getLogFile(logFileDay);
+    final file = getLogFile(logFileDay);
 
     if (_currentFile?.path != file.path || _logFileSink == null) {
       if (_logFileSink != null) {
@@ -69,11 +72,6 @@ class FileLogStorage with QueueMixin implements LogStorage {
     }
 
     _logFileSink!.writeln(text);
-  }
-
-  @override
-  Future<void> appendLog(DateTime date, String text) async {
-    enqueue(text);
   }
 
   @override
@@ -126,27 +124,20 @@ class FileLogStorage with QueueMixin implements LogStorage {
   }
 
   @override
-  Future<void> deleteExportedArchives() async {
-    final archives = Directory(_logFolderPath!)
+  Future<void> deleteExportedFiles() async {
+    final archives = _exportFilesDirectory
         .listSync(followLinks: false, recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.g.zip'))
-        .toList();
+        .whereType<File>();
 
-    for (var archive in archives) {
-      await archive.delete();
-    }
+    final deleteArchivesFutures = archives.map((archive) => archive.delete());
+
+    await Future.wait(deleteArchivesFutures);
   }
 
-  Future<File> getLogFile(DateTime date) async {
-    final path = getLogFileName(date);
-    return File('$logFolderPath/$path');
-  }
-
-  // TODO? Move to shared code to get file name?
-  String getLogFileName(DateTime date) {
-    return '${date.year}-${date.month}-${date.day}.log';
-  }
+  /// Gets the file at the path which will contain the logs for the given date.
+  /// NB! This does not create the file, not does it check if the file exists.
+  File getLogFile(DateTime date) =>
+      File('$logFolderPath/${logFileNameOfDate(date)}');
 
   Future<LinkedHashMap<DateTime, File>> getLogFiles() async {
     try {
@@ -170,25 +161,20 @@ class FileLogStorage with QueueMixin implements LogStorage {
     }
 
     final logFiles = logDirectory
-        .listSync(followLinks: false, recursive: true)
+        .listSync(followLinks: false)
         .whereType<File>()
-        .where((f) => f.path.endsWith('.log'))
-        .toList();
+        .where(
+          (f) =>
+              CommonLogStorageOperations.isLogFileNameValid(p.basename(f.path)),
+        )
+        .map(
+          (f) => MapEntry(
+            CommonLogStorageOperations.parseLogFileDate(p.basename(f.path)),
+            f,
+          ),
+        );
 
-    for (final logFile in logFiles) {
-      final date = DateTime.tryParse(
-        p.basenameWithoutExtension(logFile.path),
-      );
-
-      if (date != null) {
-        logFilesMap.addAll({date: logFile});
-      } else {
-        final errorString = 'Error parsing log file date: ${logFile.path}';
-        throw Exception(errorString);
-      }
-    }
-
-    return logFilesMap;
+    return LinkedHashMap.fromEntries(logFiles);
   }
 
   String get logFolderPath {
@@ -196,23 +182,30 @@ class FileLogStorage with QueueMixin implements LogStorage {
     return _logFolderPath!;
   }
 
+  Directory get _exportFilesDirectory {
+    final dir = Directory('$logFolderPath/log_export');
+
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
+
+    return dir;
+  }
+
   @override
   Future<void> exportLogsToDownload() async {
     final stream = exportLogsStream();
 
     final formatter = DateFormat('yyyyMMdd_HHmmss');
-    final filename = 'log_${formatter.format(DateTime.now())}.txt';
-    final dir = await getApplicationCacheDirectory();
-    final downloadFolder = '${dir.path}/dragon_logs_export/';
-    final folder = Directory(downloadFolder);
+    final filename = 'export_${formatter.format(DateTime.now())}.log';
 
-    if (!await folder.exists()) {
-      await folder.create(recursive: true);
+    final file = File('${_exportFilesDirectory.path}/$filename');
+
+    if (!await file.exists()) {
+      await file.create(recursive: true);
     }
 
-    final logFilePath = '$downloadFolder$filename';
-    final logFile = File(logFilePath);
-    final raf = logFile.openSync(mode: FileMode.writeOnly);
+    final raf = file.openSync(mode: FileMode.writeOnly);
 
     await for (final data in stream) {
       raf.writeStringSync(data);
@@ -222,7 +215,7 @@ class FileLogStorage with QueueMixin implements LogStorage {
 
     // Use share_plus to share the log file
     await Share.shareXFiles(
-      [XFile(logFilePath, mimeType: 'text/plain')],
+      [XFile(file.path, mimeType: 'text/plain')],
       text: 'App log file export',
     );
   }

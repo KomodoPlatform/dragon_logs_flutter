@@ -3,6 +3,7 @@ import 'dart:html' as html;
 import 'dart:html';
 import 'dart:typed_data';
 
+import 'package:dragon_logs/src/storage/input_output_mixin.dart';
 import 'package:dragon_logs/src/storage/log_storage.dart';
 import 'package:dragon_logs/src/storage/queue_mixin.dart';
 import 'package:file_system_access_api/file_system_access_api.dart';
@@ -14,7 +15,9 @@ import 'package:js/js_util.dart' as js;
 @JS()
 external dynamic get navigator;
 
-class WebLogStorage with QueueMixin implements LogStorage {
+class WebLogStorage
+    with QueueMixin, CommonLogStorageOperations
+    implements LogStorage {
   // TODO: Multi-day support
   // final List<FileSystemFileHandle> _logHandles = [];
   FileSystemDirectoryHandle? _logDirectory;
@@ -37,7 +40,7 @@ class WebLogStorage with QueueMixin implements LogStorage {
     }
 
     final now = DateTime.now();
-    _currentLogFileName = logDayFileName(now);
+    _currentLogFileName = logFileNameOfDate(now);
 
     FileSystemDirectoryHandle? root = await storage?.getDirectory();
 
@@ -78,13 +81,17 @@ class WebLogStorage with QueueMixin implements LogStorage {
       while (await getLogFolderSize() > size) {
         final files = await _getLogFiles();
 
-        final sortedFiles = files.toList()
+        final sortedFiles = files
+            .where(
+              (handle) =>
+                  CommonLogStorageOperations.isLogFileNameValid(handle.name),
+            )
+            .toList()
           ..sort((a, b) {
-            // Extract date from name in format yyyy-mm-dd.txt
-            final reg = RegExp(r'(\d{4}-\d{2}-\d{2})');
-
-            final aDate = reg.firstMatch(a.name)?.group(1);
-            final bDate = reg.firstMatch(b.name)?.group(1);
+            final aDate =
+                CommonLogStorageOperations.tryParseLogFileDate(a.name);
+            final bDate =
+                CommonLogStorageOperations.tryParseLogFileDate(b.name);
 
             if (aDate == null || bDate == null) {
               return 0;
@@ -104,7 +111,7 @@ class WebLogStorage with QueueMixin implements LogStorage {
   Future<void> initWriteDate(DateTime date) async {
     await closeLogFile();
 
-    _currentLogFileName = logDayFileName(date);
+    _currentLogFileName = logFileNameOfDate(date);
 
     _currentLogFile ??= await _logDirectory?.getFileHandle(
       _currentLogFileName,
@@ -135,32 +142,11 @@ class WebLogStorage with QueueMixin implements LogStorage {
     return totalSize;
   }
 
-  String logDayFileName(DateTime date) {
-    return "${date.year}-${date.month}-${date.day}.txt";
-  }
-
-  Future<FileSystemWritableFileStream> _getLogStream(DateTime date) async {
-    String fileName = logDayFileName(date);
-    FileSystemFileHandle handle =
-        await _logDirectory!.getFileHandle(fileName, create: true);
-
-    // _logHandles.add(handle);
-    final writable = await handle.createWritable(keepExistingData: true);
-
-    return writable;
-  }
-
-  @override
-  Future<void> appendLog(DateTime date, String text) async {
-    enqueue(text);
-  }
-
   //TODO! Move to web worker for web so we can access sync flush method instead
   // of this workaround
   @override
   Future<void> closeLogFile() async {
     if (_currentLogStream != null) {
-      // await _currentLogStream?.flush();
       await _currentLogStream!.close();
 
       _currentLogStream = null;
@@ -214,12 +200,13 @@ class WebLogStorage with QueueMixin implements LogStorage {
   }
 
   @override
-  Future<void> deleteExportedArchives() async {
+  Future<void> deleteExportedFiles() async {
     // Since it's a web implementation, we just need to ensure necessary permissions.
     // Note: Real-world applications should handle permissions gracefully, prompting users as needed.
   }
 
   @override
+  // TODO: Multi-threading support in web worker
   Future<void> exportLogsToDownload() async {
     final bytesStream = exportLogsStream().asyncExpand((event) {
       return Stream.fromIterable(event.codeUnits);

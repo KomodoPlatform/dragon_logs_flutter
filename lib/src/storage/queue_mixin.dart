@@ -68,6 +68,10 @@ mixin QueueMixin {
     }
   }
 
+  Future<void> appendLog(DateTime date, String text) async {
+    enqueue(text);
+  }
+
   /// Writes a String to the log text file for today.
   Future<void> writeToTextFile(String logs);
 }

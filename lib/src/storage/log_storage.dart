@@ -11,7 +11,7 @@ abstract class LogStorage {
 
   Future<void> exportLogsToDownload();
 
-  Future<void> deleteExportedArchives();
+  Future<void> deleteExportedFiles();
 
   /// Returns the total size of all logs in bytes.
   Future<int> getLogFolderSize();
