@@ -72,24 +72,32 @@ class WebLogStorage with QueueMixin implements LogStorage {
   @override
   // TODO: implement so that we don't have to delete the whole file
   Future<void> deleteOldLogs(int size) async {
-    while (await getLogFolderSize() > size) {
-      final files = await _getLogFiles();
+    await startFlush();
 
-      final sortedFiles = files.toList()
-        ..sort((a, b) {
-          // Extract date from name in format yyyy-mm-dd.txt
-          final reg = RegExp(r'(\d{4}-\d{2}-\d{2})');
+    try {
+      while (await getLogFolderSize() > size) {
+        final files = await _getLogFiles();
 
-          final aDate = reg.firstMatch(a.name)?.group(1);
-          final bDate = reg.firstMatch(b.name)?.group(1);
+        final sortedFiles = files.toList()
+          ..sort((a, b) {
+            // Extract date from name in format yyyy-mm-dd.txt
+            final reg = RegExp(r'(\d{4}-\d{2}-\d{2})');
 
-          if (aDate == null || bDate == null) {
-            return 0;
-          }
+            final aDate = reg.firstMatch(a.name)?.group(1);
+            final bDate = reg.firstMatch(b.name)?.group(1);
 
-          return aDate.compareTo(bDate);
-        });
-      await sortedFiles.first.remove();
+            if (aDate == null || bDate == null) {
+              return 0;
+            }
+
+            return aDate.compareTo(bDate);
+          });
+        await sortedFiles.first.remove();
+      }
+    } catch (e) {
+      rethrow;
+    } finally {
+      endFlush();
     }
   }
 

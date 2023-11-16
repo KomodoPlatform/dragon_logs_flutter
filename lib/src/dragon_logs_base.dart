@@ -85,6 +85,11 @@ class DragonLogs {
     _instance._metadata = null;
   }
 
+  /// Clears all logs.
+  static Future<void> clearLogs() async {
+    await _logger.logStorage.deleteOldLogs(0);
+  }
+
   /// A summary of the logger's performance metrics.
   ///
   /// This provides insights into the performance of the DragonLogs system.

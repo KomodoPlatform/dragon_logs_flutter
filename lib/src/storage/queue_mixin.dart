@@ -26,7 +26,7 @@ mixin QueueMixin {
   }
 
   Future<void> startFlush() async {
-    assert(_flushCompleter == null, 'Flush already in progress');
+    // assert(_flushCompleter == null, 'Flush already in progress');
 
     while (isFlushing) {
       await (_flushCompleter?.future ?? Future.delayed(Duration(seconds: 1)));
