@@ -1,16 +1,17 @@
-import 'package:stored_logs/stored_logs.dart';
+// ignore: unused_import
+import 'package:dragon_logs/dragon_logs.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('A group of tests', () {
-    final awesome = Awesome();
+    // final awesome = Awesome();
 
     setUp(() {
       // Additional setup goes here.
     });
 
     test('First Test', () {
-      expect(awesome.isAwesome, isTrue);
+      // expect(awesome.isAwesome, isTrue);
     });
   });
 }
