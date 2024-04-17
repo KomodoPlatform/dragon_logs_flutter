@@ -17,6 +17,10 @@ void main() {
       await DragonLogs.init();
     });
 
+    tearDown(() async {
+      await DragonLogs.clearLogs();
+    });
+
     test('Test log export', () async {
       for (int i = 0; i < 10000; i++) {
         log('test', 'test message $i');
@@ -32,19 +36,16 @@ void main() {
     });
 
     test('Test native log export order', () async {
+      await DragonLogs.clearLogs();
       final logStorageLocation = await FileLogStorage.getLogFolderPath();
-
-      // delete any existing files
-      final logFiles = Directory(logStorageLocation).listSync();
-      for (final logFile in logFiles) {
-        logFile.deleteSync();
-      }
 
       // create 5 log files with 1000 logs each
       for (int i = 0; i < 20; i++) {
         final date = DateTime.now().subtract(Duration(days: i));
+        final monthWithPadding = date.month.toString().padLeft(2, '0');
+        final dayWithPadding = date.day.toString().padLeft(2, '0');
         final logFile = File(
-          '$logStorageLocation/APP-LOGS_${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}.log',
+          '$logStorageLocation/APP-LOGS_${date.year}-$monthWithPadding-$dayWithPadding.log',
         );
         final logFileSink = logFile.openWrite();
         for (int j = 0; j < 1000; j++) {
@@ -72,14 +73,6 @@ void main() {
       for (int i = 0; i < logDates.length - 1; i++) {
         expect(logDates[i].isBefore(logDates[i + 1]), isTrue);
       }
-
-      // write [logs] to a file
-      final exportFile = File(
-        '$logStorageLocation/exported_logs.log',
-      );
-      final exportFileSink = exportFile.openWrite();
-      exportFileSink.write(logs);
-      exportFileSink.close();
     });
   });
 }
