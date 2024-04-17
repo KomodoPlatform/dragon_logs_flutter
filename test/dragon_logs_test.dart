@@ -70,10 +70,16 @@ void main() {
       }).toList();
 
       for (int i = 0; i < logDates.length - 1; i++) {
-        print('logDates[$i]: ${logDates[i]}');
-        print('logDates[$i+1]: ${logDates[i + 1]}');
         expect(logDates[i].isBefore(logDates[i + 1]), isTrue);
       }
+
+      // write [logs] to a file
+      final exportFile = File(
+        '$logStorageLocation/exported_logs.log',
+      );
+      final exportFileSink = exportFile.openWrite();
+      exportFileSink.write(logs);
+      exportFileSink.close();
     });
   });
 }
