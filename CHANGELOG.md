@@ -1,3 +1,7 @@
+## 1.0.3
+
+- Fix log message sorting bug. Thanks to @takenagain for their first contribution to this project.
+
 ## 1.0.2
 
 - Bump `intl` dependency to latest version of `0.19.0`.

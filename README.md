@@ -17,6 +17,7 @@ Dragon Logs aims to simplify the logging and log storage process in your Flutter
 
 - ✅ Cross-platform log storage
 - ✅ Cross-platform logs download
+- ⬜ Flutter web wasm support
 - ⬜ Web multi-threading support
 - ⬜ Log levels (e.g. debug, info, warning, error)
 - ⬜ Performance metrics (in progress)
@@ -36,7 +37,7 @@ To use Dragon Logs, add it as a dependency in your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  dragon_logs: ^1.0.1
+  dragon_logs: ^1.0.3
 ```
 
 Then, run:
