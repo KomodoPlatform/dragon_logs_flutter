@@ -1,3 +1,7 @@
+## 1.0.2
+
+- Bump `intl` dependency to latest version of `0.19.0`.
+
 ## 1.0.1
 
 - Refactor to share more code with web and native platforms.
