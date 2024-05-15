@@ -1,6 +1,8 @@
 mixin CommonLogStorageOperations {
   String logFileNameOfDate(DateTime date) {
-    return "APP-LOGS_${date.year}-${date.month}-${date.day}.log";
+    final String monthWithPadding = date.month.toString().padLeft(2, '0');
+    final String dayWithPadding = date.day.toString().padLeft(2, '0');
+    return "APP-LOGS_${date.year}-$monthWithPadding-$dayWithPadding.log";
   }
 
   static DateTime parseLogFileDate(String fileName) {

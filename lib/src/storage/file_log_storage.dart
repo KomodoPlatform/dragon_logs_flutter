@@ -101,7 +101,9 @@ class FileLogStorage
   Stream<String> exportLogsStream() async* {
     final files = await getLogFiles();
 
-    for (final file in files.values) {
+    final sortedFiles = files.values.toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
+    for (final file in sortedFiles) {
       final stats = file.statSync();
       final sizeKb = stats.size / 1024;
       print("File ${file.path} size: $sizeKb KB");
