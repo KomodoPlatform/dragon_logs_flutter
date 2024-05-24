@@ -1,4 +1,4 @@
-## 1.0.3
+## 1.0.4
 
 - Fix log message sorting bug. Thanks to @takenagain for their first contribution to this project.
 
