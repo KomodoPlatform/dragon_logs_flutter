@@ -173,7 +173,10 @@ class WebLogStorage
 
     print('_getLogFiles: ${files.map((e) => e.name).join(',\n')}');
 
-    return files;
+    return files
+      ..sort(
+        (a, b) => a.name.compareTo(b.name),
+      );
   }
 
   Future<String> _readFileContent(html.File file) async {
