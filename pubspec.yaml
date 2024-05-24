@@ -12,6 +12,8 @@ environment:
 dev_dependencies:
   lints: ^1.0.0
   test: ^1.16.0
+  path_provider_platform_interface: any
+  plugin_platform_interface: any
 
 dependencies:
   flutter:
@@ -31,9 +33,6 @@ dependencies:
 
   # Approved via K-W PR  #1106
   share_plus: ^7.0.2 # TODO: request review of latest version
-
-  path_provider_platform_interface: any
-  plugin_platform_interface: any
 
     
   # ====== Pending Secure code review ======
