@@ -1,19 +1,14 @@
 import 'dart:async';
-import 'dart:html' as html;
-import 'dart:html';
+import 'dart:js_interop';
 import 'dart:typed_data';
+
+import 'package:intl/intl.dart';
+import 'dart:js_interop_unsafe';
+import 'package:web/web.dart';
 
 import 'package:dragon_logs/src/storage/input_output_mixin.dart';
 import 'package:dragon_logs/src/storage/log_storage.dart';
 import 'package:dragon_logs/src/storage/queue_mixin.dart';
-import 'package:file_system_access_api/file_system_access_api.dart';
-import 'package:intl/intl.dart';
-import 'package:js/js.dart';
-import 'package:js/js_util.dart' as js;
-
-/// Declare navigator like in a Web Worker context.
-@JS()
-external dynamic get navigator;
 
 class WebLogStorage
     with QueueMixin, CommonLogStorageOperations
@@ -21,37 +16,47 @@ class WebLogStorage
   // TODO: Multi-day support
   // final List<FileSystemFileHandle> _logHandles = [];
   FileSystemDirectoryHandle? _logDirectory;
-
-  FileSystemFileHandle? _currentLogFile;
+  FileSystemDirectoryReader? _logDirectoryReader;
   FileSystemWritableFileStream? _currentLogStream;
   String _currentLogFileName = "";
 
   late Timer _flushTimer;
 
-  late final StorageManager? storage =
-      js.getProperty(navigator, "storage") as StorageManager?;
+  late final StorageManager? storage;
 
   @override
   Future<void> init() async {
-    if (!FileSystemAccess.supported) {
-      throw Exception(
-        "FileSystemAccess not supported for log storage on this browser",
-      );
-    }
+    storage = window.navigator.storage;
 
     final now = DateTime.now();
     _currentLogFileName = logFileNameOfDate(now);
 
-    FileSystemDirectoryHandle? root = await storage?.getDirectory();
+    FileSystemDirectoryHandle? root;
 
-    if (root != null) {
-      _logDirectory =
-          await root.getDirectoryHandle("dragon_logs", create: true);
-
-      // await initWriteDate(now);
-    } else {
-      throw Exception("Could not get root directory");
+    if (storage == null) {
+      throw Exception("Could not get storage manager");
     }
+    try {
+      root = await storage!.getDirectory().toDart;
+    } catch (e) {
+      throw Exception("Error getting directory handle: $e");
+    }
+
+    try {
+      _logDirectory = await root
+          .getDirectoryHandle(
+            "dragon_logs",
+            FileSystemGetDirectoryOptions(create: true),
+          )
+          .toDart;
+    } catch (e) {
+      throw Exception("Error getting directory handle");
+    }
+
+    // // Call the JS method to get the directory reader
+    // _logDirectoryReader =
+
+    await initWriteDate(now);
 
     initQueueFlusher();
   }
@@ -63,7 +68,8 @@ class WebLogStorage
     }
 
     try {
-      await _currentLogStream!.writeAsText(logs + '\n');
+      String content = logs + '\n';
+      await _currentLogStream!.write(content.toJS).toDart;
 
       await closeLogFile();
       await initWriteDate(DateTime.now());
@@ -74,7 +80,10 @@ class WebLogStorage
 
   @override
   // TODO: implement so that we don't have to delete the whole file
+  @override
   Future<void> deleteOldLogs(int size) async {
+    if (_logDirectory == null) return;
+
     await startFlush();
 
     try {
@@ -99,7 +108,13 @@ class WebLogStorage
 
             return aDate.compareTo(bDate);
           });
-        await sortedFiles.first.remove();
+
+        if (sortedFiles.isNotEmpty) {
+          await sortedFiles.first.getFile().toDart.then((file) async {
+            // TODO: Implement file.remove
+            // await file.remove().toDart;
+          });
+        }
       }
     } catch (e) {
       rethrow;
@@ -109,30 +124,62 @@ class WebLogStorage
   }
 
   Future<void> initWriteDate(DateTime date) async {
-    await closeLogFile();
+    await closeLogFile(); // Ensure any previous log file is closed
 
     _currentLogFileName = logFileNameOfDate(date);
 
-    _currentLogFile ??= await _logDirectory?.getFileHandle(
-      _currentLogFileName,
-      create: true,
-    );
+    if (_logDirectory == null) return;
 
-    final sizeBytes = (await _currentLogFile?.getFile())?.size ?? 0;
+    FileSystemFileHandle _currentLogFile;
+    try {
+      // Get the file handle, create the file if it doesn't exist
+      _currentLogFile = await _logDirectory!
+          .getFileHandle(
+            _currentLogFileName,
+            FileSystemGetFileOptions(create: true),
+          )
+          .toDart;
+    } catch (e) {
+      throw Exception("Error getting file handle: $e");
+    }
 
-    _currentLogStream = await _currentLogFile?.createWritable(
-      keepExistingData: true,
-    );
+    try {
+      // Open a writable stream for the file, allowing for data to be appended
+      _currentLogStream = await _currentLogFile
+          .createWritable(
+            FileSystemCreateWritableOptions(keepExistingData: true),
+          )
+          .toDart;
+    } catch (e) {
+      throw Exception("Error creating writable file stream: $e");
+    }
 
-    await _currentLogStream?.seek(sizeBytes);
+    if (_currentLogStream == null) return;
+
+    // Move the write pointer to the end of the file
+    int sizeBytes = 0;
+    try {
+      final file = await _currentLogFile.getFile().toDart;
+      sizeBytes = file.size; // Get the size of the file in bytes
+    } catch (e) {
+      throw Exception("Error getting file size: $e");
+    }
+
+    try {
+      // Seek to the end of the file to append data
+      await _currentLogStream!.seek(sizeBytes).toDart;
+    } catch (e) {
+      throw Exception("Error seeking file stream: $e");
+    }
   }
 
   @override
   Future<int> getLogFolderSize() async {
     final files = await _getLogFiles();
 
-    final htmlFileObjects =
-        await Future.wait<File>(files.map((e) => e.getFile()));
+    final htmlFileObjects = await Future.wait<File>(
+      files.map((e) => e.getFile().toDart),
+    );
 
     final int totalSize = htmlFileObjects.fold(
       0,
@@ -147,8 +194,7 @@ class WebLogStorage
   @override
   Future<void> closeLogFile() async {
     if (_currentLogStream != null) {
-      await _currentLogStream!.close();
-
+      await _currentLogStream!.close().toDart;
       _currentLogStream = null;
     }
   }
@@ -156,7 +202,9 @@ class WebLogStorage
   @override
   Stream<String> exportLogsStream() async* {
     for (final file in await _getLogFiles()) {
-      String content = await _readFileContent(await file.getFile());
+      String content = await _readFileContent(
+        await file.getFile().toDart,
+      );
       yield content;
     }
   }
@@ -164,42 +212,87 @@ class WebLogStorage
   /// Returns a list of OPFS file handles for all log files EXCLUDING any
   /// temporary write file (if it exists) identified by the `.crswap` extension.
   Future<List<FileSystemFileHandle>> _getLogFiles() async {
-    final files = await _logDirectory?.values
-            .where((handle) => handle.kind == FileSystemKind.file)
-            .cast<FileSystemFileHandle>()
-            .where((handle) => !handle.name.endsWith('.crswap'))
-            .toList() ??
-        [];
+    final List<FileSystemFileHandle> logFiles = [];
 
-    print('_getLogFiles: ${files.map((e) => e.name).join(',\n')}');
+    if (_logDirectory == null) {
+      throw Exception("Log directory is not initialized");
+    }
 
-    return files
-      ..sort(
-        (a, b) => a.name.compareTo(b.name),
-      );
+    // Retrieve the entries iterator from the directory
+    final entriesAsyncIterator =
+        _logDirectory!.callMethod<JSObject>('entries'.toJS);
+
+    final entriesCompleter = Completer<void>();
+
+    try {
+      // Loop over the iterator asynchronously to process the entries
+      while (true) {
+        final result = await entriesAsyncIterator
+            .callMethod<JSPromise>('next'.toJS)
+            .toDart as JSObject;
+
+        final done = result.getProperty('done'.toJS) as bool;
+        final value = result.getProperty('value'.toJS) as List?;
+
+        // If the iteration is done, break the loop
+        if (done) {
+          break;
+        }
+
+        // Get the key and value from the iterator result (value is the [key, entry] pair)
+        final entry = value?[1];
+
+        // Check if the entry is a file and not a temporary file
+        if (entry is FileSystemFileHandle && !entry.name.endsWith('.crswap')) {
+          logFiles.add(entry);
+        }
+      }
+
+      // Mark the completer as complete when done
+      if (!entriesCompleter.isCompleted) {
+        entriesCompleter.complete();
+      }
+    } catch (e) {
+      if (!entriesCompleter.isCompleted) {
+        entriesCompleter.completeError(
+          Exception("Error reading log directory entries: $e"),
+        );
+      }
+    }
+
+    // Wait for the completion of the directory read before returning the list
+    await entriesCompleter.future;
+
+    // Sort files by their names
+    logFiles.sort((a, b) => a.name.compareTo(b.name));
+
+    print("Log files: ${logFiles.map((e) => e.name)}");
+
+    return logFiles;
   }
 
-  Future<String> _readFileContent(html.File file) async {
+  Future<String> _readFileContent(File file) async {
     final completer = Completer<String>();
-    final reader = html.FileReader();
+    final reader = FileReader();
 
-    StreamSubscription? loadEndSubscription;
-    StreamSubscription? errorSubscription;
+    try {
+      // Read the file content as text
+      reader.readAsText(file);
 
-    loadEndSubscription = reader.onLoadEnd.listen((event) {
-      completer.complete(reader.result as String);
-    });
+      // Listen for the load end event to complete the completer
+      reader.onLoadEnd.listen((event) {
+        if (reader.error == null) {
+          completer.complete(reader.result as String);
+        } else {
+          completer.completeError(reader.error!);
+        }
+      });
+    } catch (e) {
+      // Handle any synchronous errors that may occur
+      completer.completeError(Exception("Error reading file: $e"));
+    }
 
-    errorSubscription = reader.onError.listen((error) {
-      completer.completeError("Error reading file: $error");
-    });
-
-    reader.readAsText(file);
-
-    return completer.future.whenComplete(() {
-      loadEndSubscription?.cancel();
-      errorSubscription?.cancel();
-    });
+    return completer.future;
   }
 
   @override
@@ -219,18 +312,22 @@ class WebLogStorage
     final filename = 'log_${formatter.format(DateTime.now())}.txt';
 
     List<int> bytes = await bytesStream.toList();
-    final blob = html.Blob([Uint8List.fromList(bytes)]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
+    // final blob = Blob(Uint8List.fromList(bytes).);
+    final url = Uri.dataFromBytes(Uint8List.fromList(bytes));
     // ignore: unused_local_variable
-    final anchor = html.AnchorElement(href: url)
+    // Download the file
+
+    final anchor = HTMLAnchorElement()
+      ..href = url.toString()
       ..target = 'blank'
       ..download = filename
       ..click();
-    html.Url.revokeObjectUrl(url);
+
+    anchor.remove();
   }
 
   void dispose() async {
-    _flushTimer.cancel();
+    _flushTimer?.cancel(); // Safeguard for null timer
     await closeLogFile(); // Close the log file once during the dispose method
   }
 }
