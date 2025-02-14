@@ -1,7 +1,7 @@
 /// Support for doing something awesome.
 ///
 /// More dartdocs go here.
-library dragon_logs;
+library;
 
 export 'src/dragon_logs_base.dart' show DragonLogs, log;
 

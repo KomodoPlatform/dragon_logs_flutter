@@ -1,3 +1,8 @@
+## 1.1.0
+
+- Bump packages to latest versions.
+- Apply new Dart format styling introduced in Dart `3.27`.
+
 ## 1.0.4
 
 - Fix log message sorting bug. Thanks to @takenagain for their first contribution to this project.

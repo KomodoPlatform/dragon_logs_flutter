@@ -10,7 +10,7 @@ const String kApplicationCachePath = 'applicationCachePath';
 const String kExternalCachePath = 'externalCachePath';
 const String kExternalStoragePath = 'externalStoragePath';
 
-class MockPathProviderPlatform 
+class MockPathProviderPlatform
     with MockPlatformInterfaceMixin
     implements PathProviderPlatform {
   @override

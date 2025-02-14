@@ -101,6 +101,9 @@ class DragonLogs {
 /// - Parameter [message]: The message to be logged.
 /// - Parameter [key]: An optional key to categorize the log. Defaults to 'LOG'.
 void log(String message, [String key = 'LOG']) {
-  DragonLogs._logger
-      .log(key, message, metadata: DragonLogs._instance._metadata);
+  DragonLogs._logger.log(
+    key,
+    message,
+    metadata: DragonLogs._instance._metadata,
+  );
 }

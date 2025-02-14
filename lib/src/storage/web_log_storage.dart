@@ -1,3 +1,6 @@
+// TODO: Remove after completing wasm implementation
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:html';
@@ -45,8 +48,10 @@ class WebLogStorage
     FileSystemDirectoryHandle? root = await storage?.getDirectory();
 
     if (root != null) {
-      _logDirectory =
-          await root.getDirectoryHandle("dragon_logs", create: true);
+      _logDirectory = await root.getDirectoryHandle(
+        "dragon_logs",
+        create: true,
+      );
 
       // await initWriteDate(now);
     } else {
@@ -63,7 +68,7 @@ class WebLogStorage
     }
 
     try {
-      await _currentLogStream!.writeAsText(logs + '\n');
+      await _currentLogStream!.writeAsText('$logs\n');
 
       await closeLogFile();
       await initWriteDate(DateTime.now());
@@ -83,15 +88,18 @@ class WebLogStorage
 
         final sortedFiles = files
             .where(
-              (handle) =>
-                  CommonLogStorageOperations.isLogFileNameValid(handle.name),
+              (handle) => CommonLogStorageOperations.isLogFileNameValid(
+                handle.name,
+              ),
             )
             .toList()
           ..sort((a, b) {
-            final aDate =
-                CommonLogStorageOperations.tryParseLogFileDate(a.name);
-            final bDate =
-                CommonLogStorageOperations.tryParseLogFileDate(b.name);
+            final aDate = CommonLogStorageOperations.tryParseLogFileDate(
+              a.name,
+            );
+            final bDate = CommonLogStorageOperations.tryParseLogFileDate(
+              b.name,
+            );
 
             if (aDate == null || bDate == null) {
               return 0;
@@ -131,8 +139,9 @@ class WebLogStorage
   Future<int> getLogFolderSize() async {
     final files = await _getLogFiles();
 
-    final htmlFileObjects =
-        await Future.wait<File>(files.map((e) => e.getFile()));
+    final htmlFileObjects = await Future.wait<File>(
+      files.map((e) => e.getFile()),
+    );
 
     final int totalSize = htmlFileObjects.fold(
       0,
@@ -173,10 +182,7 @@ class WebLogStorage
 
     print('_getLogFiles: ${files.map((e) => e.name).join(',\n')}');
 
-    return files
-      ..sort(
-        (a, b) => a.name.compareTo(b.name),
-      );
+    return files..sort((a, b) => a.name.compareTo(b.name));
   }
 
   Future<String> _readFileContent(html.File file) async {

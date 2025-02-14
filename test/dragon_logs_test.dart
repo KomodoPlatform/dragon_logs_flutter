@@ -57,15 +57,14 @@ void main() {
 
       // export the logs and check that they are in order
       final logs = await DragonLogs.exportLogsStream()
-          .asyncMap((event) => event + '\n')
+          .asyncMap((event) => '$event\n')
           .join();
 
       final logMessages = logs.split('\n');
-      final logDates = logMessages
-          .where(
-        (element) => element.contains(' at '),
-      )
-          .map((logMessage) {
+      final logDates =
+          logMessages.where((element) => element.contains(' at ')).map((
+        logMessage,
+      ) {
         final date = logMessage.split(' at ')[1];
         return DateTime.parse(date);
       }).toList();

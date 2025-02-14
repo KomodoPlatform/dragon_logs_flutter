@@ -54,6 +54,9 @@ build/
 .flutter-plugins
 .flutter-plugins-dependencies
 flutter_export_environment.sh
+#Not required for packages
+/pubspec.lock
 
 # Exceptions to above rules.
 !**/ios/**/default.profraw
+
